@@ -1,0 +1,210 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
+typedef struct Mainsuiper
+{
+    int bom;
+    int surrownd;
+    int flag;
+}Box;
+
+int Y,X;
+//初期化
+void Init(Box **box){
+    int i,j;
+for(i=0;i<Y;i++){
+    for(j=0;j<X;j++){
+        box[i][j].bom=0;
+        box[i][j].surrownd=-1;
+        box[i][j].flag=0;
+     }
+    }
+}
+//操作選択
+int Select(){
+    int judge,select;
+        do{
+            judge=0;
+            printf("flag:0 select:1 ->");
+            scanf("%d",&select);
+            if(select<0||select>1){
+                judge=1;
+                printf("0または1を入力してください\n");
+            }
+        }while(judge);
+        return select;
+}
+
+//爆弾セット
+void setBom(Box **box,int time){
+    int x,y;
+    while(time-->0){
+        do{
+            x=rand()%X;
+            y=rand()%Y;
+        }while(box[y][x].bom!=0);
+        box[y][x].bom=1;
+    }
+}
+
+//画面表示
+void Print(Box **box){
+    int i,j;
+    printf("   ");
+    for(i=0;i<X;i++){
+        printf("%3d", i);
+    }
+    printf("\n");
+    for(i=0;i<Y;i++){
+        printf("%3d",i);
+        for(j=0;j<X;j++){
+            if(box[i][j].surrownd==-1){
+                if(box[i][j].flag==0){
+                    printf("%3c",'*');
+                }else {
+                    printf("%3c",'F');
+                }
+            }else if(box[i][j].surrownd!=-1){
+                if(box[i][j].bom==1){
+                    printf("%3c",'B');
+                }else{
+                    printf("%3d",box[i][j].surrownd);
+                }
+            }
+        }
+        putchar('\n');
+    }
+}
+
+//爆弾数確認(3×3)
+void SquareCheck(Box **box,int x,int y){
+    box[y][x].surrownd=0;
+    int i,j;
+    for(i=y-1;i<=y+1;i++){
+        for(j=x-1;j<=x+1;j++){
+            if(i<0||i>=Y||j<0||j>=X||y==i&&x==j){
+                continue;
+            }else{
+                if(box[i][j].bom==1) box[y][x].surrownd++;
+            }
+        }
+    }
+}
+
+//ボックスを確認
+int BoxCheck(Box **box){
+ int check=0;
+ int i,j;
+ for(i=0;i<Y;i++){
+    for(j=0;j<X;j++){
+        if(box[i][j].surrownd==-1){
+            check++;
+        }
+    }
+ }
+    return check;
+}
+
+//0の時表を開ける
+void fillzero(Box **box,int x,int y){
+    int openX[X];
+    int openY[Y];
+    int i,j;
+    int len=0;
+    for(i=y-1;i<=y+1;i++){
+        for(j=x-1;j<=x+1;j++){
+            //i,jが配列の範囲外またはx,yと一致または探索済みの場合
+            if(i<0||i>=Y||j<0||j>=X||i==y&&j==x||box[i][j].surrownd>-1){
+                continue;
+            //探索済みでない場合
+            }else{
+                SquareCheck(box,j,i);
+                if(box[i][j].surrownd==0){
+                    openX[len]=j;
+                    openY[len]=i;
+                     len++;
+                    }
+                }
+            }
+        }
+    for(i=len-1;i>=0;i--){
+        printf("%d %d\n",openX[i],openY[i]);
+        fillzero(box,openX[i],openY[i]);
+    }
+    }
+
+int main(){
+  srand(time(NULL));
+    int bom;//爆弾数
+    int i,j;
+    int select;//操作(flag or select)
+    int x,y;//解答用x,y座標
+//初期設定
+    printf("今回のマスのサイズを設定してください\n");
+    printf("x: ");
+    scanf("%d",&X);
+    printf("y: ");
+    scanf("%d",&Y);
+    printf("爆弾の数を設定してね:");
+    scanf("%d",&bom);
+    Box **box;//解答用のグラフ
+    int result;//周囲の爆弾数
+    int judge;
+
+    box=malloc(sizeof(Box *)*Y);
+        for(i=0;i<Y;i++){
+            box[i]=malloc(sizeof(Box)*X);
+        }
+        Init(box);
+    setBom(box,bom);//爆弾を設置
+    Print(box);//画面表示
+    int N;//指定できる選択数
+    //選択操作
+    while(1){
+        N=BoxCheck(box);
+        //終了操作
+        if(N==bom){
+            printf("完遂おめでとう\n");
+            break;
+        }
+        //選択処理
+        select=Select();
+
+        do{
+            judge=0;
+            printf("x: ");
+            scanf("%d",&x);
+            printf("y: ");
+            scanf("%d",&y);
+            if(x<0||x>=X||y<0||y>=Y) {
+                judge=1;
+                printf("xまたはyが要素外です\n");
+            }
+        }while(judge);
+
+    if(select==0){
+        box[y][x].flag=1;
+    }else if(select==1){
+        if(box[y][x].flag==1) box[y][x].flag=0;
+    SquareCheck(box,x,y);
+     //爆弾選択
+    if(box[y][x].bom==1){
+        printf("爆発!!\n");
+        break;
+    }else if(box[y][x].surrownd==0){
+        fillzero(box,x,y);
+    }
+    }
+      Print(box);
+    }
+    //全ての要素を探索
+    for(i=0;i<Y;i++){
+        for(j=0;j<X;j++){
+            SquareCheck(box,i,j);
+       }
+    }
+    printf("<--正解-->\n");
+        Print(box);
+    return 0;
+}
